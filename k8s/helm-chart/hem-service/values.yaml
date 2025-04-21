@@ -1,0 +1,26 @@
+app:
+  name: hrm
+
+replicaCount: 3
+
+image:
+  repository: thapatsatish/hrm-service
+  tag: latest
+  pullPolicy: Always
+
+service:
+  type: LoadBalancer
+  port: 4002
+
+resources:
+  requests:
+    cpu: '250m'
+    memory: '256Mi'
+  limits:
+    cpu: '500m'
+    memory: '512Mi'
+
+hpa:
+  minReplicas: 2
+  maxReplicas: 10
+  cpuTarget: 50

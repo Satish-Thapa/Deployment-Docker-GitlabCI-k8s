@@ -1,0 +1,5 @@
+replicaCount: 10000
+image:
+  tag: dev
+service:
+  type: ClusterIP

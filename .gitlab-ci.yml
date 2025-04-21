@@ -1,0 +1,61 @@
+variables:
+  IMAGE_NAME: thapatsatish/hrm-service
+  DOCKER_IMAGE: thapatsatish/hrm-service
+
+stages:
+  - build
+  - deploy
+
+build_image:
+  stage: build
+  image: docker:20.10.16
+  services:
+    - docker:20.10.16-dind
+  before_script:
+    - docker login -u $REGISTRY_USER -p $REGISTRY_PASS
+  script:
+    - |
+      if [[ "$CI_COMMIT_BRANCH" == "main" ]]; then
+        TAG="stage"
+      elif [[ "$CI_COMMIT_BRANCH" == "development" ]]; then
+        TAG="dev"
+      else
+        TAG="latest"
+      fi
+      echo "Using tag: $TAG"
+      docker build -t $DOCKER_IMAGE:$TAG .
+      docker push $DOCKER_IMAGE:$TAG
+  after_script:
+    - docker images
+  only:
+    - main
+    - development
+
+deploy_helm:
+  stage: deploy
+  when: manual
+  before_script:
+    - pwd
+    - export KUBECONFIG=./k8s/config #gitlab ci lai default ma betdina so yei rakdeko copy gagera
+    - cat $KUBECONFIG
+    - kubectl cluster-info
+  script:
+    - |
+      if [[ "$CI_COMMIT_BRANCH" == "main" ]]; then
+        NAMESPACE="stage"
+        VALUES_FILE="values-staging.yaml"
+        RELEASE_NAME="hrm-stage"
+      elif [[ "$CI_COMMIT_BRANCH" == "development" ]]; then
+        NAMESPACE="dev"
+        VALUES_FILE="values-development.yaml"
+        RELEASE_NAME="hrm-dev"
+      fi
+      echo "Deploying to namespace: $NAMESPACE using values: $VALUES_FILE"
+      echo "Current working directory:"
+      echo "Listing all files from the repo root to verify paths:"
+      echo "Changing to Helm chart directory..."
+      cd $CI_PROJECT_DIR/k8s/helm-chart/hem-service # Ensure this is correct
+      helm upgrade --install $RELEASE_NAME . -f $VALUES_FILE --namespace $NAMESPACE --create-namespace --kubeconfig $KUBECONFIG
+  only:
+    - main
+    - development

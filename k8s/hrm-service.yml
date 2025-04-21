@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hrm-service
+  labels:
+    app: hrm-service
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: hrm
+  template:
+    metadata:
+      labels:
+        app: hrm
+    spec:
+      containers:
+        - name: hrm
+          image: thapatsatish/hrm-service
+          imagePullPolicy: Always #tell kubernetes to pull image from remote but not from local repo
+          ports:
+            - containerPort: 4002
+          resources:
+            requests:
+              cpu: '250m' # Minimum CPU needed
+              memory: '256Mi'
+            limits:
+              cpu: '500m' # Max CPU allocated
+              memory: '512Mi'
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hrm-service
+spec:
+  selector:
+    app: hrm
+  type: LoadBalancer
+  ports:
+    - protocol: TCP
+      port: 4002
+      targetPort: 4002
+      nodePort: 30000 #eesma aaucha rwq

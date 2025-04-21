@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongodb/mongodb-community-server
+    container_name: mongodb
+    restart: always
+    ports:
+      - '27017:27017'
+    networks:
+      - my-network
+
+  node-app:
+    build: .
+    container_name: hrm-service
+    restart: always
+    depends_on:
+      - mongodb
+    environment:
+      MONGO_URI: mongodb://mongodb:27017/assets-management-service
+    ports:
+      - '4002:4002'
+    networks:
+      - my-network
+
+networks:
+  my-network:
+    driver: bridge
